@@ -16,7 +16,8 @@ int main() {
         cout << "Wybierz opcje: ";
         cin >> wybor;
 
-        switch(wybor) {
+        switch(wybor) 
+        {
             case 1: cout << "Wybrano opcje 1" << endl; break;
             case 6: cout << "Zamykanie programu..." << endl; break;
             default: cout << "Nieznana opcja!" << endl; break;
