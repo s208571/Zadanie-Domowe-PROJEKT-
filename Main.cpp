@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -18,7 +19,16 @@ int main() {
 
         switch(wybor) 
         {
-            case 1: cout << "Wybrano opcje 1" << endl; break;
+            case 1: 
+            {
+                cout << "Generuje pusty plik SVG" << endl;
+                ofstream plik("rysunek.svg");
+                plik << "<?xml version=\"1.0\" standalone=\"no\"?>" << endl;
+                plik << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">" << endl;
+                plik << "<svg width=\"800\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\">" << endl;
+                plik << "</svg>";
+                plik.close(); break;
+            }
             case 6: cout << "Zamykanie programu..." << endl; break;
             default: cout << "Nieznana opcja!" << endl; break;
         }
