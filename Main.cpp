@@ -94,7 +94,7 @@ int main()
         cout << "2. Generuj zaawansowany SVG" << endl;
         cout << "3. Kolko i krzyzyk (wkrotce)" << endl;
         cout << "4. Warcaby (wkrotce)" << endl;
-        cout << "5. Pomoc" << endl;
+        cout << "5. Pomoc(Jak grac w gry)" << endl;
         cout << "6. Wyjscie" << endl;
         cout << "Wybierz opcje: ";
         cin >> wybor;
