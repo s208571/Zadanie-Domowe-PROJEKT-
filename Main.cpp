@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <windows.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -26,7 +27,7 @@ void RysowanieKrztaltow()
     int linia_x1, linia_y1,  linia_x2, linia_y2, linia_grubosc;
     string linia_kolor;
     cout <<"Teraz bede pytac o wymary i kolory!, jesli nie znasz kolorow to liste masz na stronie https://www.w3schools.com/colors/colors_names.asp" << endl;
-    Sleep(4000);
+    Sleep(3000);
     bool Kolizja;
     do 
     {
@@ -81,12 +82,54 @@ void RysowanieKrztaltow()
     plik << "<rect x=\" "<< prostokat_x << "\" y=\" "<< prostokat_y << "\" width=\" "<< prostokat_szer << "\" height=\" " << prostokat_wys << "\" fill=\" " << prostokat_kolor << "\" />" <<endl;
     plik << "<line x1=\" "<< linia_x1 << "\" y1=\" "<< linia_y1 << "\" x2=\" "<< linia_x2 << "\" y2=\" " << linia_y2 << "\" stroke=\" " << linia_kolor << "\" stroke-width=\" " << linia_grubosc << "\" />" <<endl;
     plik << "</svg>";
+    plik.close();
+}
+void CzyszczenieKK()
+{
+
+}
+bool SprwadzWygranaKK(char planszaKK[3][3], char gracz)
+{
+    for(int i=0; i<3; i++)
+    {
+        if(planszaKK[i][0]==gracz && planszaKK[i][1]==gracz && planszaKK[i][2]==gracz)
+            return true;
+        if(planszaKK[0][i]==gracz && planszaKK[1][i]==gracz && planszaKK[2][i]==gracz)
+            return true;
+    }
+    if(planszaKK[0][0]==gracz && planszaKK[1][1]==gracz && planszaKK[2][2]==gracz)
+        return true;
+    if(planszaKK[0][2]==gracz && planszaKK[1][1]==gracz && planszaKK[2][0]==gracz)
+        return true;
+
+    return false;
+}
+void RysowanieKK(char planszaKK[3][3])
+{
+    for(int z=0; z<3; z++)
+{
+    for(int i=0; i<3; i++)
+    {
+        cout<<" "<<planszaKK[z][i]<<" ";
+        if (i<2) cout<< "|";
+    }
+    cout << endl;
+    if (z<2) cout << "---+---+---"<<endl;
 }
 
+}
 int main() 
 {
-    int wybor;
-
+    char aktualny_gracz = 'O';
+    int wybor_interfejs;
+    int wybor_polaKK;
+    int liczba_ruchowKK = 0;
+    bool koniec_gryKK = false;
+    char gra[3][3] = {
+        {'1', '2', '3'},
+        {'4', '5', '6'},
+        {'7', '8', '9'}
+    };
     do 
     {
         cout << "=== MENU GLOWNE ===" << endl;
@@ -97,17 +140,79 @@ int main()
         cout << "5. Pomoc(Jak grac w gry)" << endl;
         cout << "6. Wyjscie" << endl;
         cout << "Wybierz opcje: ";
-        cin >> wybor;
+        cin >> wybor_interfejs;
 
-        switch(wybor) 
+        switch(wybor_interfejs) 
         {
             case 1: GenerowaniePustegoSVG(); break;
             case 2: RysowanieKrztaltow(); break;
+            case 3:
+    liczba_ruchowKK = 0;
+    koniec_gryKK = false;
+    aktualny_gracz = 'O';
+
+    gra[0][0] = '1'; gra[0][1] = '2'; gra[0][2] = '3';
+    gra[1][0] = '4'; gra[1][1] = '5'; gra[1][2] = '6';
+    gra[2][0] = '7'; gra[2][1] = '8'; gra[2][2] = '9';
+
+    while (koniec_gryKK == false && liczba_ruchowKK < 9)
+    {
+        RysowanieKK(gra);
+        cout << "Tura gracza: " << aktualny_gracz << endl;
+        cout << "Wybierz pole (1-9): ";
+        cin >> wybor_polaKK;
+
+        bool poprawny_ruch = true;
+
+        switch(wybor_polaKK)
+        {
+            case 1: if(gra[0][0]=='1') gra[0][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 2: if(gra[0][1]=='2') gra[0][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 3: if(gra[0][2]=='3') gra[0][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 4: if(gra[1][0]=='4') gra[1][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 5: if(gra[1][1]=='5') gra[1][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 6: if(gra[1][2]=='6') gra[1][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 7: if(gra[2][0]=='7') gra[2][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 8: if(gra[2][1]=='8') gra[2][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            case 9: if(gra[2][2]=='9') gra[2][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
+            default: cout<<"Nie ma takiego pola!"<<endl; poprawny_ruch=false; Sleep(1000); break;
+        }
+
+        if(poprawny_ruch == true)
+        {
+            if (SprwadzWygranaKK(gra, aktualny_gracz) == true)
+            {
+                RysowanieKK(gra);
+                cout << "\nBRAWO! Wygrywa gracz: " << aktualny_gracz << "!" << endl;
+                koniec_gryKK = true;
+                system("pause");
+            }
+            else
+            {
+                liczba_ruchowKK++;
+                if(liczba_ruchowKK == 9)
+                {
+                    RysowanieKK(gra);
+                    cout << "\nREMIS! Nikt nie wygral." << endl;
+                    koniec_gryKK = true;
+                    system("pause");
+                }
+                else
+                {
+                    if (aktualny_gracz == 'O') aktualny_gracz = 'X';
+                    else aktualny_gracz = 'O';
+                }
+            }
+        }
+    }
+    break;
+            case 4: cout << "Funkcja w budowie." << endl; break;
+            case 5: cout << "Pomoc w budowie." << endl; break;
             case 6: cout << "Zamykanie programu..." << endl; break;
             default: cout << "Nieznana opcja!" << endl; break;
+            cout << endl;
         }
-        cout << endl;
-    } while (wybor != 6);
+    } while (wybor_interfejs != 6);
 
     return 0;
 }
