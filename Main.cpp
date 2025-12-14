@@ -84,10 +84,7 @@ void RysowanieKrztaltow()
     plik << "</svg>";
     plik.close();
 }
-void CzyszczenieKK()
-{
 
-}
 bool SprwadzWygranaKK(char planszaKK[3][3], char gracz)
 {
     for(int i=0; i<3; i++)
@@ -116,8 +113,48 @@ void RysowanieKK(char planszaKK[3][3])
     cout << endl;
     if (z<2) cout << "---+---+---"<<endl;
 }
-
 }
+void AktualizujSVG(char plansza[3][3])
+{
+    ofstream plik("gra_kolko_krzyzyk.svg");
+
+    
+    plik << "<?xml version=\"1.0\" standalone=\"no\"?>" << endl;
+    plik << "<svg width=\"300\" height=\"300\" xmlns=\"http://www.w3.org/2000/svg\">" << endl;
+
+    
+    plik << "<rect width=\"300\" height=\"300\" fill=\"white\" />" << endl;
+    plik << "<line x1=\"100\" y1=\"0\" x2=\"100\" y2=\"300\" stroke=\"black\" stroke-width=\"5\" />" << endl;
+    plik << "<line x1=\"200\" y1=\"0\" x2=\"200\" y2=\"300\" stroke=\"black\" stroke-width=\"5\" />" << endl;
+    plik << "<line x1=\"0\" y1=\"100\" x2=\"300\" y2=\"100\" stroke=\"black\" stroke-width=\"5\" />" << endl;
+    plik << "<line x1=\"0\" y1=\"200\" x2=\"300\" y2=\"200\" stroke=\"black\" stroke-width=\"5\" />" << endl;
+
+    
+    for(int wiersz = 0; wiersz < 3; wiersz++)
+    {
+        for(int kolumna = 0; kolumna < 3; kolumna++)
+        {
+            
+            int cx = (kolumna * 100) + 50; 
+            int cy = (wiersz * 100) + 50;
+            char znak = plansza[wiersz][kolumna];
+
+            if(znak == 'O')
+            {
+                plik << "<circle cx=\"" << cx << "\" cy=\"" << cy << "\" r=\"40\" stroke=\"blue\" stroke-width=\"5\" fill=\"none\" />" << endl;
+            }
+            else if(znak == 'X')
+            {
+                plik << "<line x1=\"" << cx-30 << "\" y1=\"" << cy-30 << "\" x2=\"" << cx+30 << "\" y2=\"" << cy+30 << "\" stroke=\"red\" stroke-width=\"5\" />" << endl;
+                plik << "<line x1=\"" << cx+30 << "\" y1=\"" << cy-30 << "\" x2=\"" << cx-30 << "\" y2=\"" << cy+30 << "\" stroke=\"red\" stroke-width=\"5\" />" << endl;
+            }
+        }
+    }
+
+    plik << "</svg>";
+    plik.close(); 
+}
+
 int main() 
 {
     char aktualny_gracz = 'O';
@@ -132,6 +169,7 @@ int main()
     };
     do 
     {
+       
         cout << "=== MENU GLOWNE ===" << endl;
         cout << "1. Generuj podstawowy SVG" << endl;
         cout << "2. Generuj zaawansowany SVG" << endl;
@@ -141,7 +179,7 @@ int main()
         cout << "6. Wyjscie" << endl;
         cout << "Wybierz opcje: ";
         cin >> wybor_interfejs;
-
+        cin.ignore(1000, '\n');
         switch(wybor_interfejs) 
         {
             case 1: GenerowaniePustegoSVG(); break;
@@ -154,14 +192,14 @@ int main()
     gra[0][0] = '1'; gra[0][1] = '2'; gra[0][2] = '3';
     gra[1][0] = '4'; gra[1][1] = '5'; gra[1][2] = '6';
     gra[2][0] = '7'; gra[2][1] = '8'; gra[2][2] = '9';
-
+    AktualizujSVG(gra);
     while (koniec_gryKK == false && liczba_ruchowKK < 9)
     {
         RysowanieKK(gra);
         cout << "Tura gracza: " << aktualny_gracz << endl;
         cout << "Wybierz pole (1-9): ";
         cin >> wybor_polaKK;
-
+        cin.ignore(1000, '\n');
         bool poprawny_ruch = true;
 
         switch(wybor_polaKK)
@@ -180,22 +218,32 @@ int main()
 
         if(poprawny_ruch == true)
         {
+            AktualizujSVG(gra);
             if (SprwadzWygranaKK(gra, aktualny_gracz) == true)
             {
                 RysowanieKK(gra);
-                cout << "\nBRAWO! Wygrywa gracz: " << aktualny_gracz << "!" << endl;
+                cout << "\n==================="<< endl;
+                cout << "Gracz " << aktualny_gracz << " wygrywa!" << endl;
+                cout << "===================\n"<< endl;
+                cout << "Wcisnij ENTER aby wrocic do menu." << endl;
+                cin.get();
                 koniec_gryKK = true;
-                system("pause");
+                
             }
             else
             {
                 liczba_ruchowKK++;
                 if(liczba_ruchowKK == 9)
                 {
+                    
                     RysowanieKK(gra);
-                    cout << "\nREMIS! Nikt nie wygral." << endl;
+                    cout << "\n==================="<< endl;
+                    cout << "Remis!" << endl;
+                    cout << "===================\n"<< endl;
+                    cout << "Wcisnij ENTER aby wrocic do menu." << endl;
+                    cin.get();
                     koniec_gryKK = true;
-                    system("pause");
+                    
                 }
                 else
                 {
@@ -210,7 +258,7 @@ int main()
             case 5: cout << "Pomoc w budowie." << endl; break;
             case 6: cout << "Zamykanie programu..." << endl; break;
             default: cout << "Nieznana opcja!" << endl; break;
-            cout << endl;
+        cout << endl;
         }
     } while (wybor_interfejs != 6);
 
