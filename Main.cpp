@@ -42,7 +42,7 @@ void RysowanieKrztaltow()
 
         cout << "Podaj wspolrzedne poczatku lini(x1,y1) oraz wspolrzedne jej konca(x2,y2) jej grubosc i jej kolor" << endl;
         cin >> linia_x1 >> linia_y1 >> linia_x2 >> linia_y2 >> linia_grubosc >> linia_kolor;
-
+            //kolizja
         int k_lewo = kolo_x - kolo_r;
         int k_prawo = kolo_x + kolo_r;
         int k_gora = kolo_y - kolo_r;
@@ -85,7 +85,7 @@ void RysowanieKrztaltow()
     plik << "</svg>";
     plik.close();
 }
-
+// Funkcje do Kolko i Krzyzyk, sprawdzanie wygranej i rysowanie planszy w konsoli
 bool SprwadzWygranaKK(char planszaKK[3][3], char gracz)
 {
     for(int i=0; i<3; i++)
@@ -115,6 +115,7 @@ void RysowanieKK(char planszaKK[3][3])
     if (z<2) cout << "---+---+---"<<endl;
 }
 }
+// Funkcja aktualizujaca plik SVG na podstawie stanu planszy
 void AktualizujSVG(char plansza[3][3])
 {
     ofstream plik("gra_kolko_krzyzyk.svg");
@@ -191,17 +192,18 @@ void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
 
         for(int j=0; j<3; j++)
         {
-            int w = linie[i][j][0];
-            int k = linie[i][j][1];
+            int w = linie[i][j][0]; //wiersz
+            int k = linie[i][j][1]; //kolumna
             if(gra[w][k] == znakGracza) licznikGracza++;
             else if(gra[w][k] != znakPC) // Czyli jest cyfra (wolne)
             {
+                // Zapamietujemy miejsce wolnego pola
                 licznikWolnych++;
                 w_wolne = w;
                 k_wolne = k;
             }
         }
-
+        // Jesli sa 2 znaki gracza i 1 wolne -> stawiamy tam znakPC
         if(licznikGracza == 2 && licznikWolnych == 1)
         {
             gra[w_wolne][k_wolne] = znakPC; // BLOKUJEMY!
@@ -215,9 +217,11 @@ void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
     {
         for(int j=0; j<3; j++)
         {
+            // Znajdujemy swoj znak
             if(gra[i][j] == znakPC)
             {
                 // Sprawdzamy sasiadow (gora, dol, lewo, prawo)
+                // Jesli wolne -> stawiamy tam
                 if(i>0 && gra[i-1][j] != 'X' && gra[i-1][j] != 'O') { gra[i-1][j] = znakPC; return; }
                 if(i<2 && gra[i+1][j] != 'X' && gra[i+1][j] != 'O') { gra[i+1][j] = znakPC; return; }
                 if(j>0 && gra[i][j-1] != 'X' && gra[i][j-1] != 'O') { gra[i][j-1] = znakPC; return; }
@@ -242,7 +246,7 @@ void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
 }
 int main() 
 {
-    srand(time(NULL));
+    srand(time(NULL)); // Zmienna do losowania
     char aktualny_gracz = 'O';
     int wybor_interfejs;
     int wybor_polaKK;
@@ -307,6 +311,7 @@ int main()
 
         switch(wybor_polaKK)
         {
+            // wybieranie pola
             case 1: if(gra[0][0]=='1') gra[0][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
             case 2: if(gra[0][1]=='2') gra[0][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
             case 3: if(gra[0][2]=='3') gra[0][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
@@ -318,7 +323,7 @@ int main()
             case 9: if(gra[2][2]=='9') gra[2][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
             default: cout<<"Nie ma takiego pola!"<<endl; poprawny_ruch=false; Sleep(1000); break;
         }
-
+        // Po udanym ruchu:
         if(poprawny_ruch == true)
         {
             AktualizujSVG(gra);
@@ -334,7 +339,7 @@ int main()
                 
             }
             else
-            {
+            {   // Sprawdzamy remis
                 liczba_ruchowKK++;
                 if(liczba_ruchowKK == 9)
                 {
@@ -360,6 +365,7 @@ int main()
             case 4: cout << "Kolko i krzyzyk z komputerem" << endl;
             liczba_ruchowKK = 0;
                 koniec_gryKK = false;
+                // Inicjalizacja planszy
                 gra[0][0]='1'; gra[0][1]='2'; gra[0][2]='3';
                 gra[1][0]='4'; gra[1][1]='5'; gra[1][2]='6';
                 gra[2][0]='7'; gra[2][1]='8'; gra[2][2]='9';
@@ -369,9 +375,10 @@ int main()
                 cout << "Chcesz grac O (zaczynasz) czy X (drugi)? (o/x): ";
                 cin >> znakGracza;
                 cin.ignore(1000, '\n');
+                // Ustawienie znakow i kto zaczyna
                 if(znakGracza == 'x' || znakGracza == 'X') {znakGracza = 'X'; znakPC = 'O'; aktualny_gracz = 'O';}
                 else {znakGracza = 'O'; znakPC = 'X'; aktualny_gracz = 'O';}
-
+                // Główna pętla gry
                 while (!koniec_gryKK && liczba_ruchowKK < 9)
                 {
                     RysowanieKK(gra);
