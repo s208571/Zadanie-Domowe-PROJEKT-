@@ -3,7 +3,8 @@
 #include <string>
 #include <windows.h>
 #include <algorithm>
-
+#include <ctime>
+#include <vector>
 using namespace std;
 
 
@@ -154,9 +155,94 @@ void AktualizujSVG(char plansza[3][3])
     plik << "</svg>";
     plik.close(); 
 }
+void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
+{
+    cout << "Komputer mysli..." << endl;
+    Sleep(1000); // Symulacja myslenia
 
+    // Sprawdzamy ile pol jest wolnych (zeby wiedziec czy to 1. ruch)
+    int wolne = 0;
+    for(int i=0; i<3; i++)
+        for(int j=0; j<3; j++)
+            if(gra[i][j] != 'X' && gra[i][j] != 'O') wolne++;
+
+    // 1. PIERWSZY KROK
+    // Jesli PC jest 'O' (zaczyna) i plansza pusta -> Srodek
+    if (znakPC == 'O' && wolne == 9)
+    {
+        gra[1][1] = znakPC; 
+        return;
+    }
+
+    // 2. BLOKOWANIE (Jesli gracz ma 2 w linii)
+    // Sprawdzamy wszystkie linie. Jesli sa 2 znaki gracza i 1 wolny -> wstawiamy tam.
+    // Tablica wszystkich mozliwych linii (wspolrzedne punktow)
+    int linie[8][3][2] = {
+        {{0,0}, {0,1}, {0,2}}, {{1,0}, {1,1}, {1,2}}, {{2,0}, {2,1}, {2,2}}, // Poziome
+        {{0,0}, {1,0}, {2,0}}, {{0,1}, {1,1}, {2,1}}, {{0,2}, {1,2}, {2,2}}, // Pionowe
+        {{0,0}, {1,1}, {2,2}}, {{0,2}, {1,1}, {2,0}}  // Przekatne
+    };
+
+    for(int i=0; i<8; i++)
+    {
+        int licznikGracza = 0;
+        int licznikWolnych = 0;
+        int w_wolne = -1, k_wolne = -1; // Zapamietujemy gdzie jest wolne pole
+
+        for(int j=0; j<3; j++)
+        {
+            int w = linie[i][j][0];
+            int k = linie[i][j][1];
+            if(gra[w][k] == znakGracza) licznikGracza++;
+            else if(gra[w][k] != znakPC) // Czyli jest cyfra (wolne)
+            {
+                licznikWolnych++;
+                w_wolne = w;
+                k_wolne = k;
+            }
+        }
+
+        if(licznikGracza == 2 && licznikWolnych == 1)
+        {
+            gra[w_wolne][k_wolne] = znakPC; // BLOKUJEMY!
+            return;
+        }
+    }
+
+    // 3. STAWIANIE PRZY SWOIM (Budowanie)
+    // Szukamy swojego znaku i sprawdzamy czy obok jest wolne
+    for(int i=0; i<3; i++)
+    {
+        for(int j=0; j<3; j++)
+        {
+            if(gra[i][j] == znakPC)
+            {
+                // Sprawdzamy sasiadow (gora, dol, lewo, prawo)
+                if(i>0 && gra[i-1][j] != 'X' && gra[i-1][j] != 'O') { gra[i-1][j] = znakPC; return; }
+                if(i<2 && gra[i+1][j] != 'X' && gra[i+1][j] != 'O') { gra[i+1][j] = znakPC; return; }
+                if(j>0 && gra[i][j-1] != 'X' && gra[i][j-1] != 'O') { gra[i][j-1] = znakPC; return; }
+                if(j<2 && gra[i][j+1] != 'X' && gra[i][j+1] != 'O') { gra[i][j+1] = znakPC; return; }
+            }
+        }
+    }
+
+    // 4. LOSOWY RUCH (Ostatecznosc)
+    // Zbieramy wolne pola do wektora i losujemy jedno
+    vector<pair<int, int>> dostepne;
+    for(int i=0; i<3; i++)
+        for(int j=0; j<3; j++)
+            if(gra[i][j] != 'X' && gra[i][j] != 'O') 
+                dostepne.push_back({i, j});
+
+    if(!dostepne.empty())
+    {
+        int los = rand() % dostepne.size();
+        gra[dostepne[los].first][dostepne[los].second] = znakPC;
+    }
+}
 int main() 
 {
+    srand(time(NULL));
     char aktualny_gracz = 'O';
     int wybor_interfejs;
     int wybor_polaKK;
@@ -173,10 +259,11 @@ int main()
         cout << "=== MENU GLOWNE ===" << endl;
         cout << "1. Generuj podstawowy SVG" << endl;
         cout << "2. Generuj zaawansowany SVG" << endl;
-        cout << "3. Kolko i krzyzyk (wkrotce)" << endl;
-        cout << "4. Warcaby (wkrotce)" << endl;
-        cout << "5. Pomoc(Jak grac w gry)" << endl;
-        cout << "6. Wyjscie" << endl;
+        cout << "3. Kolko i krzyzyk" << endl;
+        cout << "4. Kolko i krzyzyk z komputerem" << endl;
+        cout << "5. Warcaby" << endl;
+        cout << "6. Pomoc(Jak grac w gry)" << endl;
+        cout << "7. Wyjscie" << endl;
         cout << "Wybierz opcje: ";
         cin >> wybor_interfejs;
         cin.ignore(1000, '\n');
@@ -197,9 +284,25 @@ int main()
     {
         RysowanieKK(gra);
         cout << "Tura gracza: " << aktualny_gracz << endl;
+        cout << "Masz 30 sekund na wykonanie ruchu." << endl;
+        time_t start = time(0);
         cout << "Wybierz pole (1-9): ";
         cin >> wybor_polaKK;
+        time_t stop = time(0);
+        double czas_sekundy = difftime(stop, start);
         cin.ignore(1000, '\n');
+        if(czas_sekundy > 30)
+        {
+            cout << "Przekroczono limit czasu! Przegrywasz." << endl;
+            Sleep(2000);
+            if (aktualny_gracz == 'O') aktualny_gracz = 'X';
+            else aktualny_gracz = 'O';
+            cout<<"Wygrywa gracz: "<<aktualny_gracz<<endl;
+            cout<<"Wcisnij ENTER aby wrocic do menu."<<endl;
+            cin.get();
+            koniec_gryKK = true;
+            break;
+        }
         bool poprawny_ruch = true;
 
         switch(wybor_polaKK)
@@ -254,13 +357,87 @@ int main()
         }
     }
     break;
-            case 4: cout << "Funkcja w budowie." << endl; break;
-            case 5: cout << "Pomoc w budowie." << endl; break;
-            case 6: cout << "Zamykanie programu..." << endl; break;
+            case 4: cout << "Kolko i krzyzyk z komputerem" << endl;
+            liczba_ruchowKK = 0;
+                koniec_gryKK = false;
+                gra[0][0]='1'; gra[0][1]='2'; gra[0][2]='3';
+                gra[1][0]='4'; gra[1][1]='5'; gra[1][2]='6';
+                gra[2][0]='7'; gra[2][1]='8'; gra[2][2]='9';
+                AktualizujSVG(gra);
+
+                char znakGracza, znakPC;
+                cout << "Chcesz grac O (zaczynasz) czy X (drugi)? (o/x): ";
+                cin >> znakGracza;
+                cin.ignore(1000, '\n');
+                if(znakGracza == 'x' || znakGracza == 'X') {znakGracza = 'X'; znakPC = 'O'; aktualny_gracz = 'O';}
+                else {znakGracza = 'O'; znakPC = 'X'; aktualny_gracz = 'O';}
+
+                while (!koniec_gryKK && liczba_ruchowKK < 9)
+                {
+                    RysowanieKK(gra);
+                    
+                    if(aktualny_gracz == znakGracza)
+                    {
+                        // Tura GRACZA (z czasem)
+                        cout << "TWOJA TURA (" << znakGracza << ")" << endl;
+                        cout << "Masz 30 sekund! Wybierz pole (1-9): ";
+                        time_t start = time(0); 
+                        cin >> wybor_polaKK;
+                        time_t stop = time(0);
+                        cin.ignore(1000, '\n');
+
+                        if (difftime(stop, start) > 30.0) {
+                            cout << "ZA DLUGO! Komputer wygrywa walkowerem." << endl;
+                            cin.get();
+                            koniec_gryKK = true;
+                            break;
+                        }
+
+                        int w = (wybor_polaKK-1)/3; //wiersze
+                        int k = (wybor_polaKK-1)%3; //kolumny
+                        if(wybor_polaKK >= 1 && wybor_polaKK <= 9 && gra[w][k] != 'X' && gra[w][k] != 'O')
+                        {
+                            gra[w][k] = znakGracza;
+                            // Po udanym ruchu:
+                            AktualizujSVG(gra);
+                            if(SprwadzWygranaKK(gra, znakGracza)) {
+                                RysowanieKK(gra);
+                                cout << "GRATULACJE! Pokonales komputer!" << endl;
+                                cin.get(); koniec_gryKK = true;
+                            }
+                            else {
+                                liczba_ruchowKK++;
+                                aktualny_gracz = znakPC;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Tura KOMPUTERA (Automatyczna)
+                        RuchKomputera(gra, znakPC, znakGracza);
+                        AktualizujSVG(gra);
+                        if(SprwadzWygranaKK(gra, znakPC)) {
+                            RysowanieKK(gra);
+                            cout << "KOMPUTER WYGRAL! Sprobuj jeszcze raz." << endl;
+                            cin.get(); koniec_gryKK = true;
+                        }
+                        else {
+                            liczba_ruchowKK++;
+                            aktualny_gracz = znakGracza;
+                        }
+                    }
+                }
+                if(liczba_ruchowKK == 9 && !koniec_gryKK) {
+                     cout << "REMIS!" << endl; cin.get();
+                }
+                break;
+            case 5: cout << "Warcaby" << endl; break;
+            case 6: cout << "Pomoc w budowie." << endl; break;
+            case 7: cout << "Zamykanie programu..." << endl; break;
             default: cout << "Nieznana opcja!" << endl; break;
         cout << endl;
         }
-    } while (wybor_interfejs != 6);
+    } while (wybor_interfejs != 7);
 
     return 0;
 }
