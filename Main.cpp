@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <ctime>
 #include <vector>
+#include <cstdlib>
 using namespace std;
 
 // Funkcja tworzy pusty plik SVG o wymiarach 800x600
@@ -86,7 +87,7 @@ void RysowanieKrztaltow()
     plik << "</svg>";
     plik.close();
 }
-// Funkcje do Kolko i Krzyzyk, sprawdzanie wygranej i rysowanie planszy w konsoli
+// Funkcje do Kolko i Krzyzyk, sprawdzanie wygranej
 bool SprwadzWygranaKK(char planszaKK[3][3], char gracz)
 {
     for(int i=0; i<3; i++)
@@ -178,39 +179,45 @@ void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
         return;
     }
 
-    // 2. BLOKOWANIE (Jesli gracz ma 2 w linii)
-    // Sprawdzamy wszystkie linie. Jesli sa 2 znaki gracza i 1 wolny -> wstawiamy tam.
-    // Tablica wszystkich mozliwych linii (wspolrzedne punktow)
-    int linie[8][3][2] = {
-        {{0,0}, {0,1}, {0,2}}, {{1,0}, {1,1}, {1,2}}, {{2,0}, {2,1}, {2,2}}, // Poziome
-        {{0,0}, {1,0}, {2,0}}, {{0,1}, {1,1}, {2,1}}, {{0,2}, {1,2}, {2,2}}, // Pionowe
-        {{0,0}, {1,1}, {2,2}}, {{0,2}, {1,1}, {2,0}}  // Przekatne
+    // 2. BLOKOWANIE RUCHU PRZECIWNIKA
+    int linie[8][6] = {
+        {0,0, 0,1, 0,2}, // Pozioma góra
+        {1,0, 1,1, 1,2}, // Pozioma środek
+        {2,0, 2,1, 2,2}, // Pozioma dół
+        {0,0, 1,0, 2,0}, // Pionowa lewa
+        {0,1, 1,1, 2,1}, // Pionowa środek
+        {0,2, 1,2, 2,2}, // Pionowa prawa
+        {0,0, 1,1, 2,2}, // Przekątna 1
+        {0,2, 1,1, 2,0}  // Przekątna 2
     };
 
-    for(int i=0; i<8; i++)
+    for(int i = 0; i < 8; i++)
     {
-        int licznikGracza = 0;
-        int licznikWolnych = 0;
-        int w_wolne = -1, k_wolne = -1; // Zapamietujemy gdzie jest wolne pole
+        // Wyciągamy współrzędne trzech pól danej linii
+        int w1 = linie[i][0], k1 = linie[i][1];
+        int w2 = linie[i][2], k2 = linie[i][3];
+        int w3 = linie[i][4], k3 = linie[i][5];
 
-        for(int j=0; j<3; j++)
-        {
-            int w = linie[i][j][0]; //wiersz
-            int k = linie[i][j][1]; //kolumna
-            if(gra[w][k] == znakGracza) licznikGracza++;
-            else if(gra[w][k] != znakPC) // Czyli jest cyfra (wolne)
-            {
-                // Zapamietujemy miejsce wolnego pola
-                licznikWolnych++;
-                w_wolne = w;
-                k_wolne = k;
-            }
+        // Pobieramy znaki, które tam stoją
+        char p1 = gra[w1][k1];
+        char p2 = gra[w2][k2];
+        char p3 = gra[w3][k3];
+
+        // Sprawdzamy 3 warianty zagrożenia ja przyjalem ze "_" to wolne pole
+        
+        // Wariant A: [X] [X] [ ]
+        if(p1 == znakGracza && p2 == znakGracza && p3 != 'X' && p3 != 'O') {
+            gra[w3][k3] = znakPC; return;
         }
-        // Jesli sa 2 znaki gracza i 1 wolne -> stawiamy tam znakPC
-        if(licznikGracza == 2 && licznikWolnych == 1)
-        {
-            gra[w_wolne][k_wolne] = znakPC; // BLOKUJEMY!
-            return;
+        
+        // Wariant B: [X] [ ] [X]
+        if(p1 == znakGracza && p3 == znakGracza && p2 != 'X' && p2 != 'O') {
+            gra[w2][k2] = znakPC; return;
+        }
+
+        // Wariant C: [ ] [X] [X]
+        if(p2 == znakGracza && p3 == znakGracza && p1 != 'X' && p1 != 'O') {
+            gra[w1][k1] = znakPC; return;
         }
     }
 
@@ -235,16 +242,25 @@ void RuchKomputera(char gra[3][3], char znakPC, char znakGracza)
 
     // 4. LOSOWY RUCH (Ostatecznosc)
     // Zbieramy wolne pola do wektora i losujemy jedno
-    vector<pair<int, int>> dostepne;
+    vector<int> wolneWiersze;
+    vector<int> wolneKolumny;
     for(int i=0; i<3; i++)
-        for(int j=0; j<3; j++)
-            if(gra[i][j] != 'X' && gra[i][j] != 'O') 
-                dostepne.push_back({i, j});
-
-    if(!dostepne.empty())
     {
-        int los = rand() % dostepne.size();
-        gra[dostepne[los].first][dostepne[los].second] = znakPC;
+        for(int j=0; j<3; j++)
+        {
+            if(gra[i][j] != 'X' && gra[i][j] != 'O')
+            {
+                wolneWiersze.push_back(i);
+                wolneKolumny.push_back(j);
+            }
+        }
+    }
+    if(!wolneWiersze.empty())
+    {
+        int los = rand() % wolneWiersze.size();
+        int w = wolneWiersze[los];
+        int k = wolneKolumny[los];
+        gra[w][k] = znakPC;
     }
 }
 const int W_ROZMIAR = 8;
@@ -256,9 +272,9 @@ void InicjalizacjaWarcaby(char plansza[W_ROZMIAR][W_ROZMIAR])
         for (int j = 0; j < W_ROZMIAR; j++)
         {
             // Ustawiamy puste pola
-            // ' ' to jasne pole (niegrywalne), '.' to ciemne pole (grywalne, puste)
+            // '#' to jasne pole (niegrywalne), '.' to ciemne pole (grywalne, puste)
             if ((i + j) % 2 == 0) 
-                plansza[i][j] = ' '; 
+                plansza[i][j] = '#'; 
             else 
                 plansza[i][j] = '.'; // Kropka ulatwia celowanie
         }
@@ -294,26 +310,30 @@ void RysowanieWarcaby(char plansza[W_ROZMIAR][W_ROZMIAR])
         cout << "|" << i << endl;
     }
     cout << " +-----------------+" << endl;
+    cout << "  0 1 2 3 4 5 6 7" << endl;
 }
 // Logika ruchu w Warcabach (sprawdzanie poprawnosci i bicia)
 // Funkcja zwraca true, jeśli ruch się udał, false jeśli był niedozwolony
 bool WykonajRuchWarcaby(char plansza[W_ROZMIAR][W_ROZMIAR], int w1, int k1, int w2, int k2, char gracz)
 {
     // 1. Sprawdzenie zakresu
-    if (w1 < 0 || w1 > 7 || k1 < 0 || k1 > 7 || w2 < 0 || w2 > 7 || k2 < 0 || k2 > 7) {
+    if (w1 < 0 || w1 > 7 || k1 < 0 || k1 > 7 || w2 < 0 || w2 > 7 || k2 < 0 || k2 > 7) 
+    {
         cout << "Blad: Wyjscie poza plansze!" << endl;
         return false;
     }
 
-    // 2. Sprawdzenie wlasciciela (uzywamy tolower, zeby dzialalo dla b i B)
+    // 2. Sprawdzenie wlasciciela pionka
     char p = plansza[w1][k1];
-    if (tolower(p) != gracz) { 
+    if (tolower(p) != gracz) 
+    { 
         cout << "Blad: To nie twoj pionek!" << endl;
         return false;
     }
 
     // 3. Cel musi byc pusty
-    if (plansza[w2][k2] != '.') {
+    if (plansza[w2][k2] != '.') 
+    {
         cout << "Blad: Pole zajete!" << endl;
         return false;
     }
@@ -325,11 +345,13 @@ bool WykonajRuchWarcaby(char plansza[W_ROZMIAR][W_ROZMIAR], int w1, int k1, int 
     // 4. Kierunek ruchu (tylko jesli NIE jest damka)
     if (!czyDamka) 
     {
-        if (gracz == 'b' && deltaW > 0) {
+        if (gracz == 'b' && deltaW > 0) 
+        {
             cout << "Blad: Zwykly bialy pionek idzie tylko w gore!" << endl;
             return false;
         }
-        if (gracz == 'c' && deltaW < 0) {
+        if (gracz == 'c' && deltaW < 0) 
+        {
             cout << "Blad: Zwykly czarny pionek idzie tylko w dol!" << endl;
             return false;
         }
@@ -350,14 +372,15 @@ bool WykonajRuchWarcaby(char plansza[W_ROZMIAR][W_ROZMIAR], int w1, int k1, int 
         int srodekK = (k1 + k2) / 2;
         char zbijany = plansza[srodekW][srodekK];
 
-        if (zbijany == '.' || tolower(zbijany) == gracz) {
+        if (zbijany == '.' || tolower(zbijany) == gracz) 
+        {
             cout << "Blad: Nie mozna bic pustego lub swojego!" << endl;
             return false;
         }
 
-        plansza[w2][k2] = p;     // Przenosimy
-        plansza[w1][k1] = '.';   // Czyscimy start
-        plansza[srodekW][srodekK] = '.'; // Usuwamy zbitego
+        plansza[w2][k2] = p;
+        plansza[w1][k1] = '.';
+        plansza[srodekW][srodekK] = '.';
         return true;
     }
 
@@ -400,10 +423,10 @@ void AktualizujSVG_Warcaby(char plansza[8][8])
 
             // Rysowanie pionków
             char p = plansza[i][j];
-            if(p != ' ' && p != '.') // Jeśli jest jakiś pionek
+            if(p != '#' && p != '.') // Jeśli jest jakiś pionek
             {
                 string kolorPionka = (tolower(p) == 'b') ? "white" : "black";
-                string obrys = (tolower(p) == 'b') ? "black" : "white"; // Kontrast
+                string obrys = (tolower(p) == 'b') ? "black" : "white";
                 
                 // Rysujemy koło (pionek)
                 plik << "<circle cx=\"" << x+25 << "\" cy=\"" << y+25 
@@ -447,21 +470,13 @@ bool WczytajGre(char plansza[8][8], char &gracz)
     ifstream plik("zapis_warcaby.txt");
     if(plik.is_open())
     {
-        plik >> gracz; // Wczytuje gracza (b/c)
-        
-        // Musimy "połknąć" znak nowej linii (enter), który został po wczytaniu gracza
-        char smiec;
-        plik.get(smiec); 
-
+        plik >> gracz;
         for(int i=0; i<8; i++)
         {
             for(int j=0; j<8; j++)
             {
-                // Używamy get(), żeby wczytać też spacje!
-                plik.get(plansza[i][j]); 
+                plik >> plansza[i][j]; 
             }
-            // Po każdym wierszu w pliku jest enter, musimy go pominąć
-            plik.get(smiec); 
         }
         plik.close();
         cout << "Gra wczytana!" << endl;
@@ -496,7 +511,6 @@ int main()
         cout << "7. Wyjscie" << endl;
         cout << "Wybierz opcje: ";
         cin >> wybor_interfejs;
-        cin.ignore(1000, '\n');
         switch(wybor_interfejs) 
         {
             case 1: GenerowaniePustegoSVG(); break;
@@ -520,7 +534,6 @@ int main()
         cin >> wybor_polaKK;
         time_t stop = time(0);
         double czas_sekundy = difftime(stop, start);
-        cin.ignore(1000, '\n');
         if(czas_sekundy > 30)
         {
             cout << "Przekroczono limit czasu! Przegrywasz." << endl;
@@ -535,19 +548,30 @@ int main()
         }
         bool poprawny_ruch = true;
 
-        switch(wybor_polaKK)
+        // Wybieranie pola
+        if (wybor_polaKK >= 1 && wybor_polaKK <= 9)
         {
-            // wybieranie pola
-            case 1: if(gra[0][0]=='1') gra[0][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 2: if(gra[0][1]=='2') gra[0][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 3: if(gra[0][2]=='3') gra[0][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 4: if(gra[1][0]=='4') gra[1][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 5: if(gra[1][1]=='5') gra[1][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 6: if(gra[1][2]=='6') gra[1][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 7: if(gra[2][0]=='7') gra[2][0]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 8: if(gra[2][1]=='8') gra[2][1]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            case 9: if(gra[2][2]=='9') gra[2][2]=aktualny_gracz; else {cout<<"Zajete!"<<endl; poprawny_ruch=false; Sleep(1000);} break;
-            default: cout<<"Nie ma takiego pola!"<<endl; poprawny_ruch=false; Sleep(1000); break;
+            int w = (wybor_polaKK - 1) / 3;
+            int k = (wybor_polaKK - 1) % 3;
+
+            // Sprawdzamy czy pole jest wolne
+            if (gra[w][k] != 'X' && gra[w][k] != 'O')
+            {
+                gra[w][k] = aktualny_gracz;
+                poprawny_ruch = true;
+            }
+            else
+            {
+                cout << "Zajete!" << endl;
+                poprawny_ruch = false;
+                Sleep(1000);
+            }
+        }
+        else
+        {
+            cout << "Nie ma takiego pola!" << endl;
+            poprawny_ruch = false;
+            Sleep(1000);
         }
         // Po udanym ruchu:
         if(poprawny_ruch == true)
@@ -556,9 +580,9 @@ int main()
             if (SprwadzWygranaKK(gra, aktualny_gracz) == true)
             {
                 RysowanieKK(gra);
-                cout << "\n==================="<< endl;
+                cout << "==================="<< endl;
                 cout << "Gracz " << aktualny_gracz << " wygrywa!" << endl;
-                cout << "===================\n"<< endl;
+                cout << "==================="<< endl;
                 cout << "Wcisnij ENTER aby wrocic do menu." << endl;
                 cin.get();
                 koniec_gryKK = true;
@@ -600,7 +624,6 @@ int main()
                 char znakGracza, znakPC;
                 cout << "Chcesz grac O (zaczynasz) czy X (drugi)? (o/x): ";
                 cin >> znakGracza;
-                cin.ignore(1000, '\n');
                 // Ustawienie znakow i kto zaczyna
                 if(znakGracza == 'x' || znakGracza == 'X') {znakGracza = 'X'; znakPC = 'O'; aktualny_gracz = 'O';}
                 else {znakGracza = 'O'; znakPC = 'X'; aktualny_gracz = 'O';}
@@ -617,7 +640,6 @@ int main()
                         time_t start = time(0); 
                         cin >> wybor_polaKK;
                         time_t stop = time(0);
-                        cin.ignore(1000, '\n');
 
                         if (difftime(stop, start) > 30.0) {
                             cout << "ZA DLUGO! Komputer wygrywa walkowerem." << endl;
@@ -625,9 +647,9 @@ int main()
                             koniec_gryKK = true;
                             break;
                         }
-
-                        int w = (wybor_polaKK-1)/3; //wiersze
-                        int k = (wybor_polaKK-1)%3; //kolumny
+                        // Wybieranie pola
+                        int w = (wybor_polaKK-1)/3;
+                        int k = (wybor_polaKK-1)%3;
                         if(wybor_polaKK >= 1 && wybor_polaKK <= 9 && gra[w][k] != 'X' && gra[w][k] != 'O')
                         {
                             gra[w][k] = znakGracza;
@@ -649,12 +671,14 @@ int main()
                         // Tura KOMPUTERA (Automatyczna)
                         RuchKomputera(gra, znakPC, znakGracza);
                         AktualizujSVG(gra);
-                        if(SprwadzWygranaKK(gra, znakPC)) {
+                        if(SprwadzWygranaKK(gra, znakPC)) 
+                        {
                             RysowanieKK(gra);
                             cout << "KOMPUTER WYGRAL! Sprobuj jeszcze raz." << endl;
                             cin.get(); koniec_gryKK = true;
                         }
-                        else {
+                        else 
+                        {
                             liczba_ruchowKK++;
                             aktualny_gracz = znakGracza;
                         }
@@ -676,13 +700,13 @@ int main()
 
             while (!koniecW)
             { 
-                cout << "\n=== WARCABY ===" << endl;
+                cout << "=== WARCABY ===" << endl;
                 cout << "Opcje: 9 9 9 9 (wyjscie), 8 8 8 8 (zapisz), 7 7 7 7 (wczytaj)" << endl;
                 RysowanieWarcaby(planszaW);
                 
                 if(CzyKoniecWarcabow(planszaW, zwyciezca)) {
                     cout << "KONIEC GRY! Wygrywa: " << (zwyciezca == 'b' ? "BIAŁE" : "CZARNE") << endl;
-                    cin.ignore(); cin.get();
+                    cin.get();
                     break;
                 }
 
@@ -692,7 +716,6 @@ int main()
                 int w1, k1, w2, k2;
                 if (!(cin >> w1 >> k1 >> w2 >> k2)) { // Zabezpieczenie przed wpisaniem liter
                     cout << "Blad danych!" << endl;
-                    cin.clear(); cin.ignore(1000, '\n');
                     continue;
                 }
 
@@ -726,14 +749,13 @@ int main()
                     // Jeśli czarny ('c') dotarł do wiersza 7 -> staje się 'C'
                     if (obecny_warcaby == 'c' && w2 == 7) planszaW[w2][k2] = 'C';
 
-                    // Aktualizacja i zmiana tury
                     AktualizujSVG_Warcaby(planszaW);
                     obecny_warcaby = (obecny_warcaby == 'b' ? 'c' : 'b');
                 }
                 else
                 {
                     cout << "Blad ruchu! Wcisnij ENTER..." << endl;
-                    cin.ignore(); cin.get();
+                    cin.get();
                 }
             }
             break; 
